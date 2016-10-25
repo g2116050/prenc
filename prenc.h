@@ -4,10 +4,13 @@
 #include <gmp.h>
 #include <tepla/ec.h>
 
-typedef struct public_key_st {
+typedef struct system_param_st {
 	EC_POINT P;
 	EC_POINT Q;
 	Element d;
+} SYS_PARAM[1];
+
+typedef struct public_key_st {
 	EC_POINT sP;
 	EC_POINT sQ;
 } PUBLIC_KEY[1];
@@ -30,7 +33,6 @@ typedef struct re_cipher_text_st {
 	Element rct1;
 	Element rct2;
 } RE_CTXT[1];
-
 
 void p_init();
 void p_clear();
@@ -58,8 +60,8 @@ void re_ctxt_clear(RE_CTXT c);
 void re_ctxt_print(RE_CTXT c);
 
 /* Enc, Dec, Re_enc and Re_dec */
-void enc(CTXT ct, char *msg, PUBLIC_KEY pubk);
-void dec(char *msg, CTXT ct, PRIVATE_KEY prik, PUBLIC_KEY pubk);
+void enc(CTXT ct, char *msg, PUBLIC_KEY pubk, SYS_PARAM sysp);
+void dec(char *msg, CTXT ct, PRIVATE_KEY prik, PUBLIC_KEY pubk, SYS_PARAM sysp);
 void re_enc(RE_CTXT rct, CTXT ct, RE_KEY rek);
 void re_dec(char *msg, RE_CTXT rct, PRIVATE_KEY prik);
 #endif

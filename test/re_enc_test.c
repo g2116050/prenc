@@ -16,6 +16,7 @@ typedef struct {
 
 char hmsg[64] = "abcdef0123456789abcdef0123456789";
 USER a, b;
+SYS_PARAM sysp;
 
 static void
 user_init(USER user, char *name)
@@ -28,7 +29,7 @@ user_init(USER user, char *name)
 	re_ctxt_init(user->rct);
 
 	private_key_set_random(user->prik);
-	public_key_set_random(user->pubk, user->prik);
+	public_key_set(user->pubk, user->prik, sysp);
 }
 
 static void
@@ -47,8 +48,8 @@ static char
 *test_enc()
 {
 	char rcvmsg[128];
-	enc(a->ct, hmsg, a->pubk);
-	dec(rcvmsg, a->ct, a->prik, a->pubk);
+	enc(a->ct, hmsg, a->pubk, sysp);
+	dec(rcvmsg, a->ct, a->prik, a->pubk, sysp);
 	printf("rcvmsg: %s\n", rcvmsg);
     mu_assert("test_enc was failed", strcmp(hmsg, rcvmsg) == 0);
 
@@ -71,9 +72,10 @@ static char
 static char *all_tests()
 {
 	p_init();
+	sys_param_init(sysp);
+	sys_param_set_random(sysp);
 	user_init(a, "a");
 	user_init(b, "b");
-	public_key_set_from_pubk(b->pubk, a->pubk, b->prik);
 
 	printf("hmsg  : %s\n", hmsg);
 
@@ -82,6 +84,7 @@ static char *all_tests()
 
 	user_clear(a);
 	user_clear(b);
+	sys_param_clear(sysp);
 	p_clear();
     return 0;
 }

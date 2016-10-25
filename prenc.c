@@ -56,44 +56,52 @@ set_random(mpz_t x, unsigned long secbit)
 }
 
 /*
+ * SYSTEM PARAMETER
+ */
+void
+sys_param_init(SYS_PARAM sysp)
+{
+	point_init(sysp->P, p->g1);
+	point_init(sysp->Q, p->g2);
+	element_init(sysp->d, p->g3);
+}
+
+void
+sys_param_set_random(SYS_PARAM sysp)
+{
+	point_random(sysp->P);
+	point_random(sysp->Q);
+	pairing_map(sysp->d, sysp->P, sysp->Q, p);
+}
+
+void
+sys_param_clear(SYS_PARAM sysp)
+{
+	point_clear(sysp->P);
+	point_clear(sysp->Q);
+	element_clear(sysp->d);
+}
+
+/*
  * PUBLIC_KEY
  */
 void
 public_key_init(PUBLIC_KEY k)
 {
-	point_init(k->P, p->g1);
-	point_init(k->Q, p->g2);
-	element_init(k->d, p->g3);
 	point_init(k->sP, p->g1);
 	point_init(k->sQ, p->g2);
 }
 
 void
-public_key_set_random(PUBLIC_KEY pubk, PRIVATE_KEY prik)
+public_key_set(PUBLIC_KEY pubk, PRIVATE_KEY prik, SYS_PARAM sysp)
 {
-	point_random(pubk->P);
-	point_random(pubk->Q);
-	pairing_map(pubk->d, pubk->P, pubk->Q, p);
-	point_mul(pubk->sP, prik->s, pubk->P);
-	point_mul(pubk->sQ, prik->s, pubk->Q);
-}
-
-void
-public_key_set_from_pubk(PUBLIC_KEY pubk, PUBLIC_KEY pubk2, PRIVATE_KEY prik)
-{
-	point_set(pubk->P, pubk2->P);
-	point_set(pubk->Q, pubk2->Q);
-	element_set(pubk->d, pubk2->d);
-	point_mul(pubk->sP, prik->s, pubk->P);
-	point_mul(pubk->sQ, prik->s, pubk->Q);
+	point_mul(pubk->sP, prik->s, sysp->P);
+	point_mul(pubk->sQ, prik->s, sysp->Q);
 }
 
 void
 public_key_clear(PUBLIC_KEY k)
 {
-	point_clear(k->P);
-	point_clear(k->Q);
-	element_clear(k->d);
 	point_clear(k->sP);
 	point_clear(k->sQ);
 }
@@ -332,7 +340,7 @@ element_get_scl_str(char *str, const Element x)
  * ENCRYPTION, DECRYPTION, RE_ENCRYPTION, RE_DECRYPTION
  */
 void
-enc(CTXT ct, char *msg, PUBLIC_KEY pubk)
+enc(CTXT ct, char *msg, PUBLIC_KEY pubk, SYS_PARAM sysp)
 {
 	mpz_t m;
 	mpz_t r;
@@ -343,7 +351,7 @@ enc(CTXT ct, char *msg, PUBLIC_KEY pubk)
 	set_random(r, 256);
 
 	/* ct1 */
-	element_pow(ct->ct1, pubk->d, r);
+	element_pow(ct->ct1, sysp->d, r);
 	element_scl(ct->ct1, ct->ct1, m);
 
 	/* ct2 */
@@ -354,7 +362,7 @@ enc(CTXT ct, char *msg, PUBLIC_KEY pubk)
 }
 
 void
-dec(char *msg, CTXT ct, PRIVATE_KEY prik, PUBLIC_KEY pubk)
+dec(char *msg, CTXT ct, PRIVATE_KEY prik, PUBLIC_KEY pubk, SYS_PARAM sysp)
 {
 	EC_POINT tQ;
 	Element d;
@@ -362,7 +370,7 @@ dec(char *msg, CTXT ct, PRIVATE_KEY prik, PUBLIC_KEY pubk)
 	point_init(tQ, p->g2);
 	element_init(d, p->g3);
 
-	point_mul(tQ, prik->invs, pubk->Q);
+	point_mul(tQ, prik->invs, sysp->Q);
 	pairing_map(d, ct->ct2, tQ, p);
 	element_inv(d, d);
 	element_mul(d, ct->ct1, d);
